@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Venice Film Festival — Trip Itinerary</title>
+<!-- iPhone: allow "Add to Home Screen" to open like an app -->
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Venice Trip" />
+<meta name="theme-color" content="#0f1720" />
+<meta name="mobile-web-app-capable" content="yes" />
+<!-- App icon: an inline SVG (waveform + laurel) so no extra files are needed -->
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Crect width='180' height='180' rx='38' fill='%230f1720'/%3E%3Cg fill='%23f8991c'%3E%3Crect x='40' y='78' width='10' height='24' rx='5'/%3E%3Crect x='58' y='58' width='10' height='64' rx='5'/%3E%3Crect x='76' y='42' width='10' height='96' rx='5'/%3E%3Crect x='94' y='64' width='10' height='52' rx='5'/%3E%3Crect x='112' y='52' width='10' height='76' rx='5'/%3E%3Crect x='130' y='80' width='10' height='20' rx='5'/%3E%3C/g%3E%3C/svg%3E" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<style>
+  :root {
+    --bg:#0f1720; --panel:#17212b; --panel-2:#1e2a36; --ink:#e8eef4; --muted:#9fb0c0;
+    --accent:#4aa8ff; --accent-2:#ffc64a; --good:#4ad07d; --line:#2a3846; --danger:#ff6b6b;
+    --hotel:#4aa8ff; --venue:#ffc64a; --dinner:#ff8ad0; --transit:#4ad07d; --air:#c08bff;
+    --audible:#f8991c;   /* Audible-style warm orange, used as a subtle accent */
+    --laurel:#d9c27a;    /* festival gold for the laurel/film touches */
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+    font:15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  header.top { position:sticky; top:0; z-index:1000; background:linear-gradient(180deg,#12324f,#0f1720);
+    border-bottom:1px solid var(--line); padding:14px 20px; }
+  .top-row { display:flex; flex-wrap:wrap; gap:16px; align-items:center; justify-content:space-between; }
+  h1 { font-size:19px; margin:0; }
+  h1 small { display:block; font-weight:400; color:var(--muted); font-size:12px; margin-top:2px; }
+  .clocks { display:flex; gap:14px; flex-wrap:wrap; }
+  .clock { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:6px 12px; text-align:center; min-width:96px; }
+  .clock .lbl { font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+  .clock .val { font-size:18px; font-variant-numeric:tabular-nums; font-weight:600; }
+  .wrap { max-width:1040px; margin:0 auto; padding:20px; }
+  nav.jump { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+  nav.jump a { font-size:12px; color:var(--accent); text-decoration:none; border:1px solid var(--line); border-radius:999px; padding:4px 12px; }
+  nav.jump a:hover { border-color:var(--accent); }
+  .toolbar { display:flex; flex-wrap:wrap; gap:10px; margin:6px 0 22px; }
+  button { background:var(--panel-2); color:var(--ink); border:1px solid var(--line); border-radius:8px; padding:8px 14px; font-size:13px; cursor:pointer; }
+  button:hover { border-color:var(--accent); }
+  button.primary { background:var(--accent); color:#04101c; border-color:var(--accent); font-weight:600; }
+  button.warn { border-color:var(--danger); color:var(--danger); }
+  .edit-badge { font-size:12px; color:var(--muted); align-self:center; }
+  section.card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:18px 20px; margin-bottom:18px; scroll-margin-top:90px; }
+  section.card > h2 { margin:0 0 12px; font-size:16px; color:var(--accent-2); }
+  .next-banner { background:linear-gradient(90deg,#123a2a,#17212b); border:1px solid var(--good); border-radius:12px; padding:12px 16px; margin-bottom:18px; }
+  .next-banner .t { font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--good); }
+  .next-banner .e { font-size:17px; font-weight:600; margin-top:2px; }
+  .next-banner .cd { font-size:26px; font-weight:700; font-variant-numeric:tabular-nums; color:var(--good); margin-top:6px; letter-spacing:.02em; }
+  .next-banner .c { color:var(--muted); font-size:13px; margin-top:3px; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { color:var(--muted); font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:.05em; }
+  a.link { color:var(--accent); text-decoration:none; }
+  a.link:hover { text-decoration:underline; }
+  .day-title { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+  .day-title .hotel { font-size:12px; color:var(--muted); }
+  .event-row.now { background:rgba(74,208,125,.09); }
+  .event-time { white-space:nowrap; font-variant-numeric:tabular-nums; font-weight:600; color:var(--accent); width:92px; }
+  .event-key { color:var(--accent-2); font-weight:600; }
+  [contenteditable="true"] { outline:none; }
+  body.editing [data-edit] { border-bottom:1px dashed var(--accent); cursor:text; }
+  body.editing [data-edit]:hover { background:rgba(74,168,255,.08); }
+  #map { height:460px; border-radius:12px; border:1px solid var(--line); }
+  .maphint { font-size:12px; color:var(--muted); margin:8px 0 12px; }
+  .legend { display:flex; flex-wrap:wrap; gap:12px; margin:12px 0 4px; font-size:12px; }
+  .legend span { display:inline-flex; align-items:center; gap:6px; color:var(--muted); }
+  .dot { width:12px; height:12px; border-radius:50%; display:inline-block; border:2px solid #0009; }
+  .loc-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px; }
+  .loc { background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px 12px; }
+  .loc .nm { font-weight:600; display:flex; align-items:center; gap:8px; }
+  .loc .meta { color:var(--muted); font-size:12px; margin:3px 0 8px; }
+  .loc .actions { display:flex; flex-wrap:wrap; gap:8px; }
+  .loc .actions a { font-size:12px; color:var(--accent); text-decoration:none; border:1px solid var(--line); border-radius:7px; padding:4px 8px; }
+  .loc .actions a:hover { border-color:var(--accent); }
+  .src-list { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .src-list a { color:var(--accent); text-decoration:none; background:var(--panel-2); border:1px solid var(--line); border-radius:8px; padding:8px 10px; display:block; }
+  .src-list a:hover { border-color:var(--accent); }
+  .src-list a small { display:block; color:var(--muted); }
+  .note { color:var(--muted); font-size:13px; }
+  .pill { display:inline-block; font-size:11px; padding:2px 8px; border-radius:999px; border:1px solid var(--line); color:var(--muted); }
+  ul.tidy { margin:6px 0; padding-left:20px; }
+  ul.tidy li { margin:4px 0; }
+  .contact-card { background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin:8px 0; }
+  .contact-card strong { color:var(--ink); }
+  .kv { display:grid; grid-template-columns:auto 1fr; gap:4px 12px; font-size:14px; margin-top:6px; }
+  .kv div:nth-child(odd) { color:var(--muted); }
+  .alert { border-left:3px solid var(--accent-2); background:rgba(255,198,74,.08); padding:10px 14px; border-radius:0 8px 8px 0; margin:10px 0; font-size:14px; }
+  .route { background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin:12px 0; }
+  .route.rec { border-color:var(--good); }
+  .route .rt-head { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .route .rt-title { font-weight:600; font-size:15px; }
+  .route .rt-badge { font-size:11px; padding:2px 9px; border-radius:999px; border:1px solid var(--line); color:var(--muted); }
+  .route.rec .rt-badge { border-color:var(--good); color:var(--good); }
+  .route .rt-summary { color:var(--muted); font-size:13px; margin:6px 0 10px; }
+  ol.steps { counter-reset:step; list-style:none; margin:0; padding:0; }
+  ol.steps li { position:relative; padding:6px 0 6px 40px; font-size:14px; border-left:2px solid var(--line); margin-left:12px; }
+  ol.steps li:last-child { border-left:2px solid transparent; }
+  ol.steps li::before { counter-increment:step; content:counter(step); position:absolute; left:-14px; top:6px; width:26px; height:26px; border-radius:50%; background:var(--accent); color:#04101c; font-weight:700; font-size:13px; display:flex; align-items:center; justify-content:center; }
+  .route.rec ol.steps li::before { background:var(--good); }
+  ol.steps li:last-child::before { background:var(--accent-2); }
+  .rt-meta { font-size:13px; margin-top:10px; }
+  .rt-meta div { margin:3px 0; }
+  .rt-meta .lbl { color:var(--muted); }
+  .disclaimer { font-size:12px; color:var(--muted); border-top:1px solid var(--line); padding-top:12px; margin-top:6px; }
+
+  /* ---- subtle branding: Audible (audio waveform + warm orange) + Venice Film Festival (laurel + film strip) ---- */
+  header.top { border-bottom:none; box-shadow:0 2px 0 var(--audible); }
+  .brand { display:flex; align-items:center; gap:12px; }
+  .brandmark { display:flex; align-items:center; gap:10px; }
+  /* audio waveform bars (Audible nod) */
+  .wave { display:flex; align-items:center; gap:3px; height:26px; }
+  .wave i { width:3px; border-radius:2px; background:var(--audible); opacity:.9; animation:pulse 1.6s ease-in-out infinite; }
+  .wave i:nth-child(1){ height:8px;  animation-delay:0s; }
+  .wave i:nth-child(2){ height:18px; animation-delay:.15s; }
+  .wave i:nth-child(3){ height:26px; animation-delay:.3s; }
+  .wave i:nth-child(4){ height:14px; animation-delay:.45s; }
+  .wave i:nth-child(5){ height:22px; animation-delay:.6s; }
+  .wave i:nth-child(6){ height:10px; animation-delay:.75s; }
+  @keyframes pulse { 0%,100%{ transform:scaleY(.55); } 50%{ transform:scaleY(1); } }
+  @media (prefers-reduced-motion: reduce){ .wave i{ animation:none; } }
+  /* festival laurel brackets around the mark */
+  .laurel { color:var(--laurel); font-size:24px; line-height:1; opacity:.85; }
+  h1 .cofest { display:block; font-weight:400; color:var(--laurel); font-size:11px; letter-spacing:.14em; text-transform:uppercase; margin-top:3px; }
+  /* film-strip divider */
+  .filmstrip { height:14px; margin:0; background:
+    repeating-linear-gradient(90deg, #0b0f14 0 8px, transparent 8px 22px) ,
+    linear-gradient(#1b1108,#1b1108);
+    border-top:1px solid #000; border-bottom:1px solid #000; position:relative; }
+  .filmstrip::before, .filmstrip::after{ content:""; position:absolute; left:0; right:0; height:4px;
+    background:repeating-linear-gradient(90deg, var(--laurel) 0 6px, transparent 6px 16px); opacity:.5; }
+  .filmstrip::before{ top:2px; } .filmstrip::after{ bottom:2px; }
+  section.card > h2 { position:relative; padding-left:14px; }
+  section.card > h2::before { content:""; position:absolute; left:0; top:2px; bottom:2px; width:4px; border-radius:3px; background:linear-gradient(var(--audible), var(--laurel)); }
+  .footer-brand { text-align:center; color:var(--muted); font-size:11px; letter-spacing:.12em; text-transform:uppercase; margin:18px 0 4px; }
+  .footer-brand .wave { display:inline-flex; vertical-align:middle; height:14px; margin-right:8px; }
+  .footer-brand .wave i{ height:10px; }
+
+  @media (max-width:640px){
+    .src-list,.loc-grid{ grid-template-columns:1fr; }
+    .wrap{ padding:14px; }
+    header.top{ padding:12px 14px; }
+    h1{ font-size:17px; }
+    .clocks{ gap:8px; }
+    .clock{ min-width:80px; padding:5px 9px; }
+    .clock .val{ font-size:16px; }
+    .top-row{ gap:10px; }
+    #map{ height:340px; }
+    button{ padding:10px 14px; font-size:14px; }   /* bigger touch targets */
+    nav.jump{ gap:6px; }
+    nav.jump a{ padding:6px 12px; }
+    table, .kv{ font-size:13px; }
+    th, td{ padding:7px 6px; }
+    .event-time{ width:auto; }
+    .next-banner .cd{ font-size:30px; }             /* countdown easy to read at a glance */
+  }
+  /* respect iPhone safe areas when added to home screen */
+  @supports(padding:max(0px)){
+    header.top{ padding-left:max(14px, env(safe-area-inset-left)); padding-right:max(14px, env(safe-area-inset-right)); }
+    .wrap{ padding-bottom:max(20px, env(safe-area-inset-bottom)); }
+  }
+  @media print {
+    body { background:#fff; color:#000; }
+    header.top, nav.jump, .toolbar, #map, .maphint, .legend, .next-banner { display:none !important; }
+    section.card { border:1px solid #ccc; break-inside:avoid; page-break-inside:avoid; background:#fff; }
+    section.card > h2 { color:#000; }
+    a.link, .src-list a, .loc .actions a { color:#000; }
+    .event-time, .event-key { color:#000; }
+    th { color:#333; }
+  }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-row">
+    <div class="brand">
+      <div class="brandmark" aria-hidden="true">
+        <span class="laurel">❧</span>
+        <span class="wave"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+      </div>
+      <h1>Venice International Film Festival<small id="tripDates"></small>
+        <span class="cofest">Audible · La Biennale di Venezia 2026</span>
+      </h1>
+    </div>
+    <div class="clocks">
+      <div class="clock"><div class="lbl">London</div><div class="val" id="clockLON">--:--</div></div>
+      <div class="clock"><div class="lbl">Venice</div><div class="val" id="clockVEN">--:--</div></div>
+    </div>
+  </div>
+</header>
+<div class="filmstrip" aria-hidden="true"></div>
+
+<div class="wrap">
+  <nav class="jump">
+    <a href="#mapCard">Map</a>
+    <a href="#daysCard">Day by day</a>
+    <a href="#flightsCard">Flights</a>
+    <a href="#transferCard">Airport transfer</a>
+    <a href="#contactsCard">Contacts</a>
+    <a href="#passesCard">Passes</a>
+    <a href="#eventsInfoCard">Event info</a>
+    <a href="#transportCard">Getting around</a>
+    <a href="#sourcesCard">Live sources</a>
+  </nav>
+
+  <div class="toolbar">
+    <button class="primary" id="btnEdit">Enable editing</button>
+    <button id="btnWord">⬇ Download Word doc</button>
+    <button id="btnPrint">Print / Save as PDF</button>
+    <button id="btnExport">Export my changes</button>
+    <button id="btnImport">Import changes</button>
+    <button class="warn" id="btnReset">Reset to original</button>
+    <input type="file" id="fileInput" accept="application/json" style="display:none" />
+    <span class="edit-badge" id="editHint">Read-only. Click “Enable editing” to change times, hotels, notes — saved in this browser.</span>
+  </div>
+
+  <div class="next-banner" id="nextBanner" style="display:none">
+    <div class="t">Up next</div>
+    <div class="e" id="nextEvent">—</div>
+    <div class="cd" id="nextCountdownBig">—</div>
+    <div class="c" id="nextCountdown">—</div>
+  </div>
+
+  <section class="card" id="mapCard">
+    <h2>Map — hotels, venues & water stops</h2>
+    <div id="map"></div>
+    <div class="legend">
+      <span><i class="dot" style="background:var(--hotel)"></i>Hotels</span>
+      <span><i class="dot" style="background:var(--venue)"></i>Event venues</span>
+      <span><i class="dot" style="background:var(--dinner)"></i>Dinner</span>
+      <span><i class="dot" style="background:var(--transit)"></i>Water bus / taxi stops</span>
+      <span><i class="dot" style="background:var(--air)"></i>Airport / arrival</span>
+    </div>
+    <p class="maphint">Click a pin for its website + directions. Pins marked “approx.” should be nudged once you confirm the exact spot. Map tiles load when you're online.</p>
+    <div class="loc-grid" id="locList"></div>
+  </section>
+
+  <section class="card" id="daysCard">
+    <h2>Day by day</h2>
+    <div id="days"></div>
+  </section>
+
+  <section class="card" id="flightsCard">
+    <h2>Flights</h2>
+    <div id="flightCountdowns" class="note" style="margin-bottom:10px"></div>
+    <table id="flightsTable"></table>
+    <p class="note">Heathrow Terminal 5. Times drift — reconfirm via the live status links below.</p>
+  </section>
+
+  <section class="card" id="hotelsCard">
+    <h2>Where you're staying</h2>
+    <table id="hotelsTable"></table>
+  </section>
+
+  <section class="card" id="transferCard">
+    <h2>Airport transfer options</h2>
+    <div id="transferInfo"></div>
+  </section>
+
+  <section class="card" id="contactsCard">
+    <h2>On-site contacts</h2>
+    <div id="contacts"></div>
+  </section>
+
+  <section class="card" id="passesCard">
+    <h2>Festival passes</h2>
+    <div id="passes"></div>
+  </section>
+
+  <section class="card" id="eventsInfoCard">
+    <h2>Event details & seating</h2>
+    <div id="eventsInfo"></div>
+  </section>
+
+  <section class="card" id="transportCard">
+    <h2>Getting around — quick reference</h2>
+    <div id="transport"></div>
+  </section>
+
+  <section class="card" id="costsCard">
+    <h2>Rough transfer costs</h2>
+    <table id="costsTable"></table>
+  </section>
+
+  <section class="card" id="sourcesCard">
+    <h2>Live sources — tap to reconfirm current info</h2>
+    <p class="note">These open official pages so you can check the latest status/times/prices. A locally-opened file can't pull this in automatically, so this is your one-click manual refresh.</p>
+    <div class="src-list" id="sources"></div>
+  </section>
+
+  <div class="footer-brand"><span class="wave"><i></i><i></i><i></i><i></i><i></i><i></i></span>Audible at the Venice Film Festival · 2026</div>
+  <p class="disclaimer" id="disclaimer"></p>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
+<script src="https://unpkg.com/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+<script>
+/* =============================================================
+   DATA MODEL — the whole page derives from this object.
+   Browser edits are saved to localStorage and merged over it.
+==============================================================*/
+const ORIGINAL = {
+  trip: { dates:"Thursday 3 – Sunday 6 September 2026", tz:{london:"Europe/London", venice:"Europe/Rome"} },
+
+  // locations: type controls pin colour; approx flags uncertain coords
+  locations: [
+    { id:"vce", name:"Venice Marco Polo Airport (VCE)", type:"air", lat:45.5053, lng:12.3519,
+      url:"https://www.veniceairport.it/en/", note:"Arrival airport. Boat docks ~10-min covered walk from terminal." },
+    { id:"pzr", name:"Piazzale Roma", type:"transit", lat:45.4381, lng:12.3186,
+      url:"https://avm.avmspa.it/en", note:"Road terminus — cars/buses end here; switch to boat. Used by the Hilton car+water-taxi transfer." },
+    { id:"saturnia", name:"Hotel Saturnia & International", type:"hotel", lat:45.4326, lng:12.3345,
+      url:"https://www.hotelsaturnia.it/en/", note:"Thursday night. San Marco, central Venice." },
+    { id:"hilton", name:"Hilton Molino Stucky", type:"hotel", lat:45.4256, lng:12.3199,
+      url:"https://www.hilton.com/en/hotels/vcehihi-hilton-molino-stucky-venice/", note:"Fri & Sat nights. Giudecca. Free guest shuttle boat + private pier." },
+    { id:"excelsior", name:"Hotel Excelsior Venice Lido", type:"venue", lat:45.4030, lng:12.3695,
+      url:"https://www.hotelexcelsiorvenezia.com/", note:"Festival panels (Spazio Incontri). On the Lido." },
+    { id:"terrazza", name:"Terrazza Campari (Sat lunch)", type:"venue", lat:45.4033, lng:12.3688, approx:true,
+      url:"https://www.labiennale.org/en/cinema/2026", note:"Standing buffet near Hotel Excelsior. Reserved for Audible 12:45–15:00. (approx. — near Excelsior)" },
+    { id:"palazzo", name:"Palazzo del Cinema (Lido)", type:"venue", lat:45.4058, lng:12.3660,
+      url:"https://www.labiennale.org/en/cinema/2026", note:"Main festival venue / screening rooms (pass access)." },
+    { id:"venissa", name:"Venissa (Friday dinner)", type:"dinner", lat:45.4869, lng:12.4147,
+      url:"https://www.venissa.it/en/", note:"On Mazzorbo island (near Burano). Group taxi boat from the Hilton at 18:00." },
+    { id:"sanmarco-stop", name:"San Marco water-bus stops", type:"transit", lat:45.4322, lng:12.3387,
+      url:"https://avm.avmspa.it/en", note:"Vaporetto + Alilaguna + Hilton shuttle stops near St Mark's." },
+    { id:"zattere-stop", name:"Zattere stop", type:"transit", lat:45.4290, lng:12.3255,
+      url:"https://avm.avmspa.it/en", note:"Hilton shuttle + vaporetto; short hop to Giudecca." },
+    { id:"palanca-stop", name:"Giudecca Palanca stop", type:"transit", lat:45.4275, lng:12.3205,
+      url:"https://avm.avmspa.it/en", note:"Vaporetto Line 2 stop by the Hilton." },
+    { id:"lido-stop", name:"Lido S.M.E. water-bus stop", type:"transit", lat:45.4130, lng:12.3760,
+      url:"https://avm.avmspa.it/en", note:"Main Lido landing (vaporetto 5.1/5.2/6/1)." }
+  ],
+
+  flights: [
+    { id:"BA606", leg:"Outbound", route:"LHR → VCE", dateISO:"2026-09-03T13:05:00+01:00", dep:"~13:05 (London)", arr:"~16:00 (Venice)", note:"BA606, Heathrow T5" },
+    { id:"BA603", leg:"Return", route:"VCE → LHR", dateISO:"2026-09-06T16:10:00+02:00", dep:"~16:10 (Venice)", arr:"~17:10 (London)", note:"BA603" }
+  ],
+  hotels: [
+    { nights:"Thursday", name:"Hotel Saturnia & International", area:"San Marco, central Venice", locId:"saturnia" },
+    { nights:"Friday & Saturday", name:"Hilton Molino Stucky", area:"Giudecca island (team base hotel)", locId:"hilton" }
+  ],
+  days: [
+    { date:"Thursday 3 September", label:"Arrival", hotel:"Stay: Hotel Saturnia & International (San Marco)",
+      events:[
+        { time:"~13:05", key:true, text:"Depart London Heathrow (T5) on BA606", whenISO:"2026-09-03T13:05:00+01:00" },
+        { time:"~16:00", text:"Land Venice Marco Polo (VCE); immigration + bags ~30–45 min", whenISO:"2026-09-03T16:00:00+02:00" },
+        { time:"~16:45", text:"Transfer to Hotel Saturnia (water taxi, Alilaguna, or the Hilton car+boat service — see Airport transfer)", whenISO:"2026-09-03T16:45:00+02:00" },
+        { time:"Evening", text:"Free time — dinner at leisure in central Venice" }
+      ]},
+    { date:"Friday 4 September", label:"Hotel switch, free day, team dinner", hotel:"Stay: Hilton Molino Stucky (Giudecca)",
+      events:[
+        { time:"By ~10:30", key:true, text:"Check out of Hotel Saturnia & International", whenISO:"2026-09-04T10:30:00+02:00" },
+        { time:"~11:00", text:"Move to Hilton Molino Stucky — free Hilton shuttle from San Marco/Zattere, or vaporetto Line 2 (~€9.50). Bags stored if before 3pm.", whenISO:"2026-09-04T11:00:00+02:00" },
+        { time:"11:00–18:00", text:"Free time (San Marco, Dorsoduro, Skyline Bar)" },
+        { time:"18:00", key:true, text:"MEETING POINT: Hilton lobby — group taxi boat to dinner (transport covered)", whenISO:"2026-09-04T18:00:00+02:00" },
+        { time:"18:45", key:true, text:"Dinner at Venissa (Mazzorbo) — dress: Cocktail / Smart Elegant. All attendees invited.", whenISO:"2026-09-04T18:45:00+02:00" },
+        { time:"21:30", text:"Taxi boat back to Hilton (arranged by Community team)", whenISO:"2026-09-04T21:30:00+02:00" }
+      ]},
+    { date:"Saturday 5 September", label:"Festival day (Lido)", hotel:"Stay: Hilton Molino Stucky",
+      events:[
+        { time:"10:30", key:true, text:"Depart Molino Stucky → Excelsior Hotel (Lido) — organised transfer", whenISO:"2026-09-05T10:30:00+02:00" },
+        { time:"11:30", key:true, text:"Panel: “Dracula: A New Chapter in Cinematic Audio” — Excelsior, Spazio Incontri (reserved seats)", whenISO:"2026-09-05T11:30:00+02:00" },
+        { time:"12:45–15:00", text:"Press / Talent Lunch — Terrazza Campari (standing buffet, reserved for Audible)", whenISO:"2026-09-05T12:45:00+02:00" },
+        { time:"15:00–16:00", text:"Panel: Rachel Ghiazza — “Stories Across Platforms” — Excelsior, Spazio Incontri (seats on request)", whenISO:"2026-09-05T15:00:00+02:00" },
+        { time:"17:00", key:true, text:"Screening: “Primetime” by Lance Oppenheim (110’) — dress: Smart Elegant", whenISO:"2026-09-05T17:00:00+02:00" },
+        { time:"21:30", key:true, text:"Screening: “Oasis: Don’t Look Back in Anger” (122’) — dress: Cocktail", whenISO:"2026-09-05T21:30:00+02:00" },
+        { time:"~23:00", text:"Taxi boat back to Hilton (night ‘N’ vaporetto is the only late public option)", whenISO:"2026-09-05T23:00:00+02:00" }
+      ]},
+    { date:"Sunday 6 September", label:"Check out + fly home", hotel:"From: Hilton Molino Stucky",
+      events:[
+        { time:"~11:00", key:true, text:"Check out — Hilton Molino Stucky", whenISO:"2026-09-06T11:00:00+02:00" },
+        { time:"~13:00", key:true, text:"Leave for airport (water taxi ~30–40 min; pre-book with concierge)", whenISO:"2026-09-06T13:00:00+02:00" },
+        { time:"~16:10", key:true, text:"Depart Venice on BA603", whenISO:"2026-09-06T16:10:00+02:00" }
+      ]}
+  ],
+
+  transferInfo: {
+    intro:"Your journey in order: Thursday you go from Marco Polo Airport (VCE) to Hotel Saturnia (San Marco) for the first night. Then on Friday (day two) it's a short LOCAL transfer from the Saturnia across to the Hilton Molino Stucky (Giudecca) — not an airport trip. Routes for both, in order, below.",
+
+    // Thursday: airport -> Saturnia. Each route is an ordered list of legs.
+    arrivalRoutes: [
+      {
+        title:"Airport → Hotel Saturnia (San Marco) — private water taxi",
+        badge:"Recommended on arrival",
+        summary:"A single private motorboat straight to San Marco. Fastest and easiest with luggage after the flight.",
+        legs:[
+          "Land at VCE. Clear immigration and collect your bags.",
+          "Walk to the airport BOAT DOCKS — about a 10-minute covered walk from arrivals.",
+          "Take a private WATER TAXI toward San Marco (book at the official taxi desk on the dock, or ask the Saturnia to pre-arrange).",
+          "The boat crosses the lagoon to the San Marco / nearest canal pier (~30 min).",
+          "Short walk from the pier through San Marco to Hotel Saturnia & International — check in."
+        ],
+        cost:"~€110–160 for up to 4 (luggage included); can be higher with night/extra surcharges.",
+        book:"Walk-up at the airport water-taxi desk, or ask Hotel Saturnia to arrange a pickup.",
+        contacts:null
+      },
+      {
+        title:"Airport → Hotel Saturnia (San Marco) — Alilaguna Orange line (budget)",
+        badge:"Cheapest",
+        summary:"The shared airport water bus. Cheap but slow (~1h15+). Take the ORANGE line — it runs down the Grand Canal into San Marco.",
+        legs:[
+          "Land at VCE, collect bags.",
+          "Walk to the airport boat docks (~10 min).",
+          "Buy an Alilaguna ticket (~€15) and board the ORANGE LINE (Linea Arancio) toward San Marco.",
+          "Ride down the Cannaregio Canal and Grand Canal, getting off at the San Marco-area stop nearest the hotel.",
+          "Short walk to Hotel Saturnia & International — check in."
+        ],
+        cost:"~€15 one-way (1 large + 1 hand bag included; +€4 per extra bag).",
+        book:"Buy at the airport Alilaguna desk or on alilaguna.it. Note: Alilaguna and vaporetto tickets are separate.",
+        contacts:null
+      },
+      {
+        title:"Airport → Hotel Saturnia — land bus + vaporetto (cheapest)",
+        badge:"Cheapest overall",
+        summary:"Take the airport express BUS to Piazzale Roma, then a vaporetto to San Marco. Cheapest realistic route, and often faster than Alilaguna because the bus is quick and frequent. One catch: buses can't enter Venice, so you change to a boat at Piazzale Roma.",
+        legs:[
+          "Land at VCE, collect bags.",
+          "Follow signs to the BUS stops just outside arrivals (a short walk — no boat dock needed).",
+          "Board the airport express bus to Piazzale Roma — either ATVO (blue coaches) or ACTV bus 5. Both cost about €10, run every ~15–30 min (roughly 05:20–00:20), and take ~20–30 min.",
+          "At Piazzale Roma (end of the road — cars/buses stop here), walk to the vaporetto pontoon.",
+          "Buy a vaporetto ticket (~€9.50, or use a 48h pass) and VALIDATE/tap on. Take a line toward San Marco (Line 1 down the Grand Canal, or 5.1).",
+          "Get off at the San Marco / nearest stop, then a short walk to Hotel Saturnia & International — check in."
+        ],
+        cost:"~€10 bus + ~€9.50 vaporetto ≈ €20 total. Bus WiFi is free.",
+        book:"Buy bus tickets at the airport ticket desk/machines or the ATVO/AVM app; vaporetto at the Piazzale Roma machines or Venezia Unica app. Keep the two tickets separate — bus and boat aren't interchangeable. With heavy luggage, note there's a walk + one change.",
+        contacts:null
+      },
+      {
+        title:"Airport → Hotel Saturnia — Alilaguna Blue line (alternative)",
+        badge:"If Orange times don't suit",
+        summary:"The Blue line also stops at San Marco (among many others). Use it if the Orange departure doesn't line up with your landing.",
+        legs:[
+          "Land at VCE, collect bags; walk to the boat docks (~10 min).",
+          "Buy an Alilaguna ticket (~€15) and board the BLUE LINE (Linea Blu).",
+          "Ride via Murano and the north of the city; the Blue line then serves the south including San Marco.",
+          "Get off at the San Marco stop, then a short walk to Hotel Saturnia."
+        ],
+        cost:"~€15 one-way.",
+        book:"Airport Alilaguna desk or alilaguna.it.",
+        contacts:null
+      }
+    ],
+
+    // Friday (day two): local transfer Saturnia -> Hilton Molino Stucky.
+    localTransfer: {
+      heading:"Friday (day two): Hotel Saturnia → Hilton Molino Stucky",
+      note:"This is a short local hop across the Giudecca Canal, not an airport journey. Check out of the Saturnia, then pick one of these. The Hilton can store your bags if you arrive before the 3pm check-in.",
+      routes:[
+        {
+          title:"Hilton free guest shuttle boat",
+          badge:"Easiest & free",
+          summary:"The Hilton runs a free shuttle boat for guests between San Marco / Zattere and the hotel. No ticket needed.",
+          legs:[
+            "Check out of Hotel Saturnia.",
+            "Walk to the San Marco (or Zattere) pier where the Hilton shuttle stops — a few minutes from the Saturnia.",
+            "Board the Hilton's free guest SHUTTLE BOAT (roughly hourly; ~20 min from San Marco). Confirm the day's exact times with the Hilton concierge.",
+            "Step off at the Hilton Molino Stucky's own pier — walk into reception (bags stored if before 3pm)."
+          ],
+          cost:"Free for hotel guests.",
+          book:"No booking; just confirm shuttle times with the concierge (Federica Marchiori / VCEHI_Concierge@hilton.com, CC audible@community.it).",
+          contacts:{ name:"Hilton concierge", email:"VCEHI_Concierge@hilton.com", cc:"Federica.Marchiori@hilton.com", alwaysCC:"audible@community.it" }
+        },
+        {
+          title:"Vaporetto (public water bus) Line 2",
+          badge:"Cheap, frequent",
+          summary:"Public water bus straight across the Giudecca Canal. A few minutes' ride.",
+          legs:[
+            "Check out and walk to the San Marco or Zattere vaporetto stop.",
+            "Buy a ticket (~€9.50 single, or use a 48-hour pass) and VALIDATE/tap on boarding.",
+            "Board LINE 2 toward Giudecca; ride to the GIUDECCA PALANCA (or Zitelle) stop — a few minutes.",
+            "Short walk along the Giudecca waterfront to the Hilton Molino Stucky."
+          ],
+          cost:"~€9.50 single (or covered by a 48h pass ~€35).",
+          book:"Buy at the dock machine or the AVM/Venezia Unica app. Alilaguna tickets are NOT valid on vaporetti.",
+          contacts:null
+        },
+        {
+          title:"Private water taxi (with luggage)",
+          badge:"Fastest, door-to-pier",
+          summary:"If you'd rather not carry bags onto a public boat, a private water taxi goes Saturnia pier → Hilton pier directly.",
+          legs:[
+            "Ask the Saturnia to call a water taxi to the nearest canal pier.",
+            "Board the private WATER TAXI with your luggage.",
+            "Short run across to the Hilton Molino Stucky's pier.",
+            "Walk into reception."
+          ],
+          cost:"~€60–90 for the short intra-city hop.",
+          book:"Ask Hotel Saturnia reception to call one, or pre-arrange with the Hilton concierge.",
+          contacts:null
+        }
+      ]
+    }
+  },
+
+  contacts: [
+    { role:"Franci Corrias (Audible) — on-site from eve of 2 Sep", phone:"+39 345 148 4165", email:"" },
+    { role:"Allegra Giudici (Community PR agency) — check-in issues", phone:"+39 376 186 8351", email:"allegra.giudici@community.it" },
+    { role:"Community PR team alias (always CC on hotel comms)", phone:"", email:"audible@community.it" },
+    { role:"Hilton transfer / concierge", phone:"", email:"Federica.Marchiori@hilton.com · CC VCEHI_Concierge@hilton.com" }
+  ],
+
+  passes: {
+    type:"Sponsor Pass (Blue Pass)",
+    grants:"Access to Festival areas — Palazzo del Cinema & Palazzo del Casinò — during and just before the Festival, plus screening rooms and press conferences.",
+    booking:"Sponsor pass holders can reserve films from 27 August.",
+    holders:["Morgan-Bentley Robin","Mariele Runacre-Beck","Manzano Claire Isabelle Therese","Jones Christopher Paul"],
+    collection:"Community collects all passes/tickets on 31 August. Handed to you in an envelope at hotel check-in.",
+    warning:"To receive a pass, each colleague MUST complete the carbon-neutrality form emailed to them. No completed form = no pass."
+  },
+
+  eventsInfo: [
+    { h:"Friday dinner — Venissa", body:"Confirmed: all Audible attendees invited. Group taxi boat there and back. All Audible-event transport (dinner, panels, Red Carpet) is covered and managed by Franci + the Community team." },
+    { h:"Dracula panel (Sat 11:30)", body:"No tickets needed — first come, first served, but reserved seats are held for the Dracula panel." },
+    { h:"Rachel's panel (Sat 15:00)", body:"No tickets needed. Not our panel, so seating is on request — tell the team headcount and they'll ask for ~10 reserved seats." },
+    { h:"Saturday lunch — Terrazza Campari", body:"Standing buffet near Hotel Excelsior. Whole team on the guest list. Terrace reserved for Audible 12:45–15:00." },
+    { h:"Dietary requirements", body:"All flagged allergies/intolerances noted; lunches and dinners arranged around the dietary needs provided." }
+  ],
+
+  transport: [
+    { mode:"Private water taxi", cost:"~€110–160 airport↔centre (up to 4)", note:"Fastest. Book via concierge or the airport taxi desk (10-min walk from arrivals)." },
+    { mode:"Hilton car + water taxi", cost:"€180 (1–4) / €270 (5–7)", note:"Door-to-door via Piazzale Roma, ~30–35 min. Book directly with the hotel (see Airport transfer)." },
+    { mode:"Alilaguna (airport boat)", cost:"~€15 one-way", note:"Blue Line reaches the Hilton (Giudecca); Orange serves San Marco. Separate ticket from vaporetto." },
+    { mode:"Vaporetto (ACTV)", cost:"~€9.50 single / 48h pass ~€35", note:"Line 2 = Giudecca↔centre; Lines 5.1/1 = Lido (~20 min). Validate every boarding." },
+    { mode:"Hilton free shuttle", cost:"Free (guests)", note:"To San Marco & Zattere, ~hourly, ~20 min. Confirm exact times with concierge." }
+  ],
+  costs: [
+    { transfer:"Airport → Saturnia (Thu)", taxi:"~€110–160", other:"Bus+vaporetto ~€20 (cheapest) · Alilaguna ~€15" },
+    { transfer:"Saturnia → Hilton (Fri)", taxi:"~€60–90", other:"Free shuttle / vaporetto ~€9.50" },
+    { transfer:"Around town (Fri)", taxi:"—", other:"48h pass ~€35" },
+    { transfer:"Lido transfers (Sat)", taxi:"Group organised (covered)", other:"Backup vaporetto ~€9.50 each way" },
+    { transfer:"Hilton → Airport (Sun)", taxi:"~€110–160", other:"Alilaguna ~€15 / Hilton service €180" }
+  ],
+  sources: [
+    { name:"BA flight status", desc:"Reconfirm BA606 / BA603", url:"https://www.britishairways.com/travel/flightinfooverview/public/en_gb" },
+    { name:"FlightAware BA606", desc:"Scheduled/actual times", url:"https://www.flightaware.com/live/flight/BAW606/history" },
+    { name:"FlightAware BA603", desc:"Scheduled/actual times", url:"https://www.flightaware.com/live/flight/BAW603/history" },
+    { name:"Alilaguna", desc:"Airport boat lines, fares, timetable", url:"https://www.alilaguna.it/en" },
+    { name:"ACTV / AVM Venezia", desc:"Vaporetto tickets & times", url:"https://avm.avmspa.it/en" },
+    { name:"Hilton Molino Stucky", desc:"Shuttle & hotel info", url:"https://www.hilton.com/en/hotels/vcehihi-hilton-molino-stucky-venice/hotel-location/" },
+    { name:"Biennale Cinema 2026", desc:"Official festival programme", url:"https://www.labiennale.org/en/cinema/2026" },
+    { name:"Venice weather", desc:"Check boat conditions", url:"https://www.google.com/search?q=venice+weather" }
+  ],
+  disclaimer:"Fares, timetables and journey times are approximate 2026 figures from public travel sources and should be reconfirmed locally — water transport is weather- and tide-dependent. Some map pins are approximate (marked). Event details, contacts, transfer rates and pass info are from the Community/Audible briefing and the Content Team Schedule 2026. Flight times drift; reconfirm 24 hrs before travel."
+};
+
+/* ------------------------- state / persistence ------------------------- */
+const LS_KEY = "veniceItineraryData_v2";
+let data = load();
+function deepClone(o){ return JSON.parse(JSON.stringify(o)); }
+function load(){ try { const s=localStorage.getItem(LS_KEY); if(s) return JSON.parse(s);}catch(e){} return deepClone(ORIGINAL); }
+function save(){ localStorage.setItem(LS_KEY, JSON.stringify(data)); }
+
+/* ------------------------- helpers ------------------------- */
+function el(tag, attrs={}, html){ const n=document.createElement(tag); for(const k in attrs) n.setAttribute(k,attrs[k]); if(html!==undefined) n.innerHTML=html; return n; }
+function esc(s){ return (s??"").toString().replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function editable(value, path){ return `<span data-edit data-path="${path}">${value ?? ""}</span>`; }
+function gmaps(loc){ return `https://www.google.com/maps/dir/?api=1&destination=${loc.lat},${loc.lng}&travelmode=transit`; }
+function amaps(loc){ return `https://maps.apple.com/?daddr=${loc.lat},${loc.lng}&dirflg=r`; }
+function locById(id){ return data.locations.find(l=>l.id===id); }
+function typeColor(t){ return getComputedStyle(document.documentElement).getPropertyValue('--'+t).trim() || '#4aa8ff'; }
+function nameLink(name, locId){ const l=locId&&locById(locId); return l&&l.url ? `<a class="link" href="${l.url}" target="_blank" rel="noopener">${esc(name)}</a>` : esc(name); }
+
+/* ------------------------- map ------------------------- */
+let map, markers = {};
+function initMap(){
+  map = L.map('map', { scrollWheelZoom:false }).setView([45.44, 12.35], 12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom:19, attribution:'&copy; OpenStreetMap contributors'
+  }).addTo(map);
+  renderMarkers();
+}
+function renderMarkers(){
+  Object.values(markers).forEach(m=>map.removeLayer(m)); markers={};
+  const bounds=[];
+  data.locations.forEach(loc=>{
+    const color=typeColor(loc.type);
+    const icon=L.divIcon({ className:'', html:`<div style="width:16px;height:16px;border-radius:50%;background:${color};border:2px solid #0009;box-shadow:0 0 0 2px ${color}55"></div>`, iconSize:[16,16], iconAnchor:[8,8] });
+    const m=L.marker([loc.lat,loc.lng],{icon}).addTo(map);
+    m.bindPopup(`<strong>${esc(loc.name)}</strong>${loc.approx?' <em>(approx.)</em>':''}<br>
+      <span style="color:#555">${esc(loc.note||"")}</span><br>
+      ${loc.url?`<a href="${loc.url}" target="_blank" rel="noopener">Website</a> · `:''}
+      <a href="${gmaps(loc)}" target="_blank" rel="noopener">Google directions</a> ·
+      <a href="${amaps(loc)}" target="_blank" rel="noopener">Apple Maps</a>`);
+    markers[loc.id]=m; bounds.push([loc.lat,loc.lng]);
+  });
+  if(bounds.length) map.fitBounds(bounds,{padding:[40,40]});
+}
+function focusLoc(id){ const l=locById(id); if(!l) return; map.setView([l.lat,l.lng],15); markers[id].openPopup(); document.getElementById('mapCard').scrollIntoView({behavior:'smooth'}); }
+
+/* ------------------------- rendering ------------------------- */
+function renderAll(){
+  document.getElementById("tripDates").textContent = data.trip.dates;
+  document.getElementById("disclaimer").innerHTML = editable(data.disclaimer, "disclaimer");
+
+  // Locations list
+  const ll=document.getElementById("locList"); ll.innerHTML="";
+  data.locations.forEach(loc=>{
+    const c=el("div",{class:"loc"});
+    c.innerHTML=`<div class="nm"><i class="dot" style="background:${typeColor(loc.type)}"></i>${esc(loc.name)}${loc.approx?' <span class="pill">approx.</span>':''}</div>
+      <div class="meta">${esc(loc.note||"")}</div>
+      <div class="actions">
+        <a href="#" data-focus="${loc.id}">Show on map</a>
+        ${loc.url?`<a href="${loc.url}" target="_blank" rel="noopener">Website</a>`:''}
+        <a href="${gmaps(loc)}" target="_blank" rel="noopener">Directions</a>
+      </div>`;
+    ll.appendChild(c);
+  });
+  ll.querySelectorAll("[data-focus]").forEach(a=>a.onclick=(e)=>{e.preventDefault(); focusLoc(a.getAttribute("data-focus"));});
+
+  // Days
+  const daysEl=document.getElementById("days"); daysEl.innerHTML="";
+  data.days.forEach((d,di)=>{
+    const block=el("div",{style:"margin-bottom:18px"});
+    block.appendChild(el("div",{class:"day-title"},
+      `<strong>${editable(d.date,`days.${di}.date`)}</strong> <span class="pill">${editable(d.label,`days.${di}.label`)}</span> <span class="hotel">${editable(d.hotel,`days.${di}.hotel`)}</span>`));
+    const tbl=el("table",{style:"margin-top:6px"});
+    d.events.forEach((ev,ei)=>{
+      const tr=el("tr",{class:"event-row","data-when":ev.whenISO||""});
+      tr.innerHTML=`<td class="event-time">${editable(ev.time,`days.${di}.events.${ei}.time`)}</td>
+                    <td class="${ev.key?'event-key':''}">${editable(ev.text,`days.${di}.events.${ei}.text`)}</td>`;
+      tbl.appendChild(tr);
+    });
+    block.appendChild(tbl); daysEl.appendChild(block);
+  });
+
+  // Flights
+  const ft=document.getElementById("flightsTable");
+  ft.innerHTML="<tr><th>Leg</th><th>Flight</th><th>Route</th><th>Departs</th><th>Arrives</th><th>Note</th></tr>";
+  data.flights.forEach((f,i)=>ft.appendChild(el("tr",{},`
+    <td>${editable(f.leg,`flights.${i}.leg`)}</td><td class="event-key">${editable(f.id,`flights.${i}.id`)}</td>
+    <td>${editable(f.route,`flights.${i}.route`)}</td><td>${editable(f.dep,`flights.${i}.dep`)}</td>
+    <td>${editable(f.arr,`flights.${i}.arr`)}</td><td>${editable(f.note,`flights.${i}.note`)}</td>`)));
+
+  // Hotels (name links to website)
+  const ht=document.getElementById("hotelsTable");
+  ht.innerHTML="<tr><th>Nights</th><th>Hotel</th><th>Area</th><th></th></tr>";
+  data.hotels.forEach((h,i)=>ht.appendChild(el("tr",{},`
+    <td>${editable(h.nights,`hotels.${i}.nights`)}</td>
+    <td class="event-key">${nameLink(h.name,h.locId)}</td>
+    <td>${editable(h.area,`hotels.${i}.area`)}</td>
+    <td><a class="link" href="#" data-focus="${h.locId}">Map</a></td>`)));
+  ht.querySelectorAll("[data-focus]").forEach(a=>a.onclick=(e)=>{e.preventDefault(); focusLoc(a.getAttribute("data-focus"));});
+
+  // Airport transfer — ordered, step-by-step routes
+  const ti=data.transferInfo; const t=document.getElementById("transferInfo");
+  function routeCard(rt, rec){
+    let contactBlock="";
+    if(rt.contacts){
+      const c=rt.contacts;
+      contactBlock=`<div class="rt-meta">
+        <div><span class="lbl">Contact:</span> ${esc(c.name)} — <a class="link" href="mailto:${c.email}">${esc(c.email)}</a></div>
+        <div><span class="lbl">CC:</span> <a class="link" href="mailto:${c.cc}">${esc(c.cc)}</a></div>
+        <div><span class="lbl">Always CC:</span> <a class="link" href="mailto:${c.alwaysCC}">${esc(c.alwaysCC)}</a> (Community team hold the contract)</div>
+      </div>`;
+    }
+    return `<div class="route${rec?' rec':''}">
+      <div class="rt-head">
+        <span class="rt-title">${esc(rt.title)}</span>
+        <span class="rt-badge">${esc(rt.badge)}</span>
+      </div>
+      <div class="rt-summary">${esc(rt.summary)}</div>
+      <ol class="steps">${rt.legs.map(l=>`<li>${esc(l)}</li>`).join("")}</ol>
+      <div class="rt-meta">
+        <div><span class="lbl">Cost:</span> ${esc(rt.cost)}</div>
+        <div><span class="lbl">Booking:</span> ${esc(rt.book)}</div>
+      </div>
+      ${contactBlock}
+    </div>`;
+  }
+  let html=`<p>${esc(ti.intro)}</p>`;
+  html+=`<h3 style="margin:14px 0 4px;font-size:15px;color:var(--accent)">Thursday: Airport → Hotel Saturnia (San Marco)</h3>`;
+  ti.arrivalRoutes.forEach((rt,ri)=> html+=routeCard(rt, ri===0));
+  const lt=ti.localTransfer;
+  html+=`<h3 style="margin:20px 0 4px;font-size:15px;color:var(--accent)">${esc(lt.heading)}</h3>`;
+  html+=`<p class="note">${esc(lt.note)}</p>`;
+  lt.routes.forEach((rt,ri)=> html+=routeCard(rt, ri===0));
+  t.innerHTML=html;
+
+  // Contacts
+  const cc=document.getElementById("contacts"); cc.innerHTML="";
+  data.contacts.forEach(c=>{
+    const parts=[];
+    if(c.phone) parts.push(`<a class="link" href="tel:${c.phone.replace(/\s/g,'')}">${esc(c.phone)}</a>`);
+    if(c.email){ const mails=c.email.split("·").map(m=>m.trim()).filter(Boolean).map(m=>{ const addr=m.replace(/.*CC\s*/i,''); return `<a class="link" href="mailto:${addr}">${esc(m)}</a>`; }).join(" · "); parts.push(mails); }
+    cc.appendChild(el("div",{class:"contact-card"}, `<strong>${esc(c.role)}</strong><div style="margin-top:4px">${parts.join(" &nbsp;·&nbsp; ")||'<span class="note">—</span>'}</div>`));
+  });
+
+  // Passes
+  const p=data.passes; const pd=document.getElementById("passes");
+  pd.innerHTML=`<div class="kv">
+      <div>Pass</div><div><strong>${esc(p.type)}</strong></div>
+      <div>Grants</div><div>${esc(p.grants)}</div>
+      <div>Booking</div><div>${esc(p.booking)}</div>
+      <div>Collection</div><div>${esc(p.collection)}</div>
+    </div>
+    <p style="margin:10px 0 4px"><strong>Sponsor pass holders</strong></p>
+    <ul class="tidy">${p.holders.map(h=>`<li>${esc(h)}</li>`).join("")}</ul>
+    <div class="alert">⚠️ ${esc(p.warning)}</div>`;
+
+  // Event info
+  const ei=document.getElementById("eventsInfo"); ei.innerHTML="";
+  data.eventsInfo.forEach(x=> ei.appendChild(el("div",{class:"contact-card"},`<strong>${esc(x.h)}</strong><p class="note" style="margin:6px 0 0">${esc(x.body)}</p>`)));
+
+  // Transport
+  const tr=document.getElementById("transport"); const tt=el("table",{});
+  tt.innerHTML="<tr><th>Mode</th><th>Cost</th><th>How / notes</th></tr>";
+  data.transport.forEach((m,i)=>tt.appendChild(el("tr",{},`
+    <td class="event-key">${editable(m.mode,`transport.${i}.mode`)}</td>
+    <td>${editable(m.cost,`transport.${i}.cost`)}</td>
+    <td>${editable(m.note,`transport.${i}.note`)}</td>`)));
+  tr.innerHTML=""; tr.appendChild(tt);
+
+  // Costs
+  const ct=document.getElementById("costsTable");
+  ct.innerHTML="<tr><th>Transfer</th><th>Water taxi</th><th>Other</th></tr>";
+  data.costs.forEach((c,i)=>ct.appendChild(el("tr",{},`
+    <td>${editable(c.transfer,`costs.${i}.transfer`)}</td>
+    <td>${editable(c.taxi,`costs.${i}.taxi`)}</td>
+    <td>${editable(c.other,`costs.${i}.other`)}</td>`)));
+
+  // Sources
+  const s=document.getElementById("sources"); s.innerHTML="";
+  data.sources.forEach(src=> s.appendChild(el("a",{href:src.url,target:"_blank",rel:"noopener"},`${esc(src.name)}<small>${esc(src.desc)}</small>`)));
+
+  bindEditable(); highlightNow();
+}
+
+/* ------------------------- inline editing ------------------------- */
+let editing=false;
+function bindEditable(){
+  document.querySelectorAll("[data-edit]").forEach(node=>{
+    node.setAttribute("contenteditable", editing?"true":"false");
+    node.onblur=()=>{ setByPath(data, node.getAttribute("data-path"), node.innerText.trim()); save(); highlightNow(); };
+  });
+}
+function setByPath(obj, path, val){ const parts=path.split("."); let o=obj; for(let i=0;i<parts.length-1;i++) o=o[parts[i]]; o[parts[parts.length-1]]=val; }
+document.getElementById("btnEdit").onclick=function(){
+  editing=!editing; document.body.classList.toggle("editing",editing);
+  this.textContent=editing?"Editing on — click to finish":"Enable editing"; this.classList.toggle("primary",!editing);
+  document.getElementById("editHint").textContent=editing?"Click any underlined text to edit. Changes save automatically in this browser.":"Read-only. Click “Enable editing” to change times, hotels, notes — saved in this browser.";
+  bindEditable();
+};
+
+/* ------------------------- export / import / reset ------------------------- */
+document.getElementById("btnExport").onclick=()=>{ const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}); const a=el("a",{href:URL.createObjectURL(blob),download:"venice-itinerary-data.json"}); document.body.appendChild(a); a.click(); a.remove(); };
+document.getElementById("btnImport").onclick=()=>document.getElementById("fileInput").click();
+document.getElementById("fileInput").onchange=(e)=>{ const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ try{ data=JSON.parse(r.result); save(); renderAll(); renderMarkers(); }catch(err){ alert("Couldn't read that file."); } }; r.readAsText(f); };
+document.getElementById("btnReset").onclick=()=>{ if(confirm("Reset everything back to the original itinerary? Your edits will be lost.")){ data=deepClone(ORIGINAL); save(); renderAll(); renderMarkers(); } };
+
+/* ------------------------- Word (.docx) export ------------------------- */
+document.getElementById("btnPrint").onclick=()=>window.print();
+document.getElementById("btnWord").onclick=()=>{
+  if(!window.docx || !window.saveAs){
+    alert("The Word library couldn't load (are you offline?). Use “Print / Save as PDF” instead.");
+    return;
+  }
+  const D=window.docx;
+  const { Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableRow, TableCell, WidthType, BorderStyle, AlignmentType } = D;
+
+  const H = (t,lvl)=>new Paragraph({ heading:lvl, spacing:{before:220,after:100}, children:[new TextRun({text:t})] });
+  const P = (t,opts={})=>new Paragraph({ spacing:{after:80}, children:[new TextRun({text:t, bold:!!opts.bold, italics:!!opts.italics, color:opts.color})] });
+  const BUL = (t)=>new Paragraph({ bullet:{level:0}, spacing:{after:40}, children:[new TextRun(t)] });
+
+  function tbl(headers, rows){
+    const cell=(text,bold)=>new TableCell({
+      margins:{top:60,bottom:60,left:80,right:80},
+      children:[new Paragraph({children:[new TextRun({text:text||"",bold:!!bold})]})]
+    });
+    const headerRow=new TableRow({tableHeader:true, children:headers.map(h=>cell(h,true))});
+    const bodyRows=rows.map(r=>new TableRow({children:r.map(c=>cell(c,false))}));
+    return new Table({ width:{size:100,type:WidthType.PERCENTAGE}, rows:[headerRow,...bodyRows] });
+  }
+
+  const kids=[];
+  kids.push(new Paragraph({ heading:HeadingLevel.TITLE, children:[new TextRun("Venice International Film Festival — Trip Itinerary")] }));
+  kids.push(P(data.trip.dates,{italics:true}));
+
+  kids.push(H("Flights", HeadingLevel.HEADING_1));
+  kids.push(tbl(["Leg","Flight","Route","Departs","Arrives","Note"],
+    data.flights.map(f=>[f.leg,f.id,f.route,f.dep,f.arr,f.note])));
+
+  kids.push(H("Where you're staying", HeadingLevel.HEADING_1));
+  kids.push(tbl(["Nights","Hotel","Area"], data.hotels.map(h=>[h.nights,h.name,h.area])));
+
+  kids.push(H("Day by day", HeadingLevel.HEADING_1));
+  data.days.forEach(d=>{
+    kids.push(H(`${d.date} — ${d.label}`, HeadingLevel.HEADING_2));
+    kids.push(P(d.hotel,{italics:true}));
+    kids.push(tbl(["Time","Plan"], d.events.map(e=>[e.time,e.text])));
+  });
+
+  kids.push(H("Airport transfer — step by step", HeadingLevel.HEADING_1));
+  const ti=data.transferInfo;
+  kids.push(P(ti.intro));
+  function routeToDoc(rt){
+    kids.push(H(`${rt.title} (${rt.badge})`, HeadingLevel.HEADING_3));
+    kids.push(P(rt.summary,{italics:true}));
+    rt.legs.forEach((l,idx)=>kids.push(new Paragraph({ spacing:{after:30}, children:[new TextRun({text:`${idx+1}. ${l}`})] })));
+    kids.push(P(`Cost: ${rt.cost}`));
+    kids.push(P(`Booking: ${rt.book}`));
+    if(rt.contacts){
+      kids.push(P(`Contact: ${rt.contacts.name} — ${rt.contacts.email}`));
+      kids.push(P(`CC: ${rt.contacts.cc}  ·  Always CC: ${rt.contacts.alwaysCC}`));
+    }
+  }
+  kids.push(H("Thursday: Airport → Hotel Saturnia (San Marco)", HeadingLevel.HEADING_2));
+  ti.arrivalRoutes.forEach(routeToDoc);
+  kids.push(H(ti.localTransfer.heading, HeadingLevel.HEADING_2));
+  kids.push(P(ti.localTransfer.note));
+  ti.localTransfer.routes.forEach(routeToDoc);
+
+  kids.push(H("On-site contacts", HeadingLevel.HEADING_1));
+  data.contacts.forEach(c=>kids.push(P(`${c.role}${c.phone?` — ${c.phone}`:""}${c.email?` — ${c.email}`:""}`)));
+
+  kids.push(H("Festival passes", HeadingLevel.HEADING_1));
+  kids.push(P(`Pass: ${data.passes.type}`,{bold:true}));
+  kids.push(P(data.passes.grants));
+  kids.push(P(data.passes.booking));
+  kids.push(P(data.passes.collection));
+  kids.push(P("Sponsor pass holders:",{bold:true}));
+  data.passes.holders.forEach(h=>kids.push(BUL(h)));
+  kids.push(P(`IMPORTANT: ${data.passes.warning}`,{bold:true,color:"B00000"}));
+
+  kids.push(H("Event details & seating", HeadingLevel.HEADING_1));
+  data.eventsInfo.forEach(x=>{ kids.push(P(x.h,{bold:true})); kids.push(P(x.body)); });
+
+  kids.push(H("Getting around — quick reference", HeadingLevel.HEADING_1));
+  kids.push(tbl(["Mode","Cost","Notes"], data.transport.map(m=>[m.mode,m.cost,m.note])));
+
+  kids.push(H("Rough transfer costs", HeadingLevel.HEADING_1));
+  kids.push(tbl(["Transfer","Water taxi","Other"], data.costs.map(c=>[c.transfer,c.taxi,c.other])));
+
+  kids.push(H("Key locations", HeadingLevel.HEADING_1));
+  data.locations.forEach(l=>kids.push(P(`${l.name}${l.approx?" (approx.)":""} — ${l.note||""}${l.url?`  [${l.url}]`:""}`)));
+
+  kids.push(H("Live sources", HeadingLevel.HEADING_1));
+  data.sources.forEach(s=>kids.push(BUL(`${s.name} — ${s.url}`)));
+
+  kids.push(new Paragraph({ spacing:{before:200}, children:[new TextRun({text:data.disclaimer, italics:true, size:18, color:"666666"})] }));
+
+  const doc=new Document({ sections:[{ properties:{}, children:kids }] });
+  Packer.toBlob(doc).then(blob=>{
+    window.saveAs(blob, "Venice Film Festival - Trip Itinerary.docx");
+  }).catch(err=>{ console.error(err); alert("Sorry, generating the Word file failed. Use “Print / Save as PDF” instead."); });
+};
+
+/* ------------------------- clocks / countdowns / now ------------------------- */
+function fmtClock(tz){ return new Intl.DateTimeFormat("en-GB",{hour:"2-digit",minute:"2-digit",second:"2-digit",timeZone:tz}).format(new Date()); }
+function tickClocks(){ document.getElementById("clockLON").textContent=fmtClock(data.trip.tz.london); document.getElementById("clockVEN").textContent=fmtClock(data.trip.tz.venice); }
+function humanDelta(ms){ if(ms<=0) return null; const m=Math.floor(ms/60000),d=Math.floor(m/1440),h=Math.floor((m%1440)/60),mm=m%60; if(d>0) return `${d}d ${h}h ${mm}m`; if(h>0) return `${h}h ${mm}m`; return `${mm}m`; }
+function allTimedEvents(){ const list=[]; data.days.forEach(day=>day.events.forEach(ev=>{ if(ev.whenISO) list.push({when:new Date(ev.whenISO),text:ev.text,time:ev.time,day:day.date}); })); return list.sort((a,b)=>a.when-b.when); }
+function bigCountdown(ms){
+  if(ms<=0) return "Now / passed";
+  let s=Math.floor(ms/1000);
+  const d=Math.floor(s/86400); s-=d*86400;
+  const h=Math.floor(s/3600); s-=h*3600;
+  const m=Math.floor(s/60); s-=m*60;
+  const pad=n=>String(n).padStart(2,"0");
+  return (d>0?`${d}d `:"") + `${pad(h)}:${pad(m)}:${pad(s)}`;
+}
+let cachedNext=null; // recomputed on tick; cheap
+function computeNext(){ const now=new Date(); return allTimedEvents().find(e=>e.when>now)||null; }
+function tickCountdown(){
+  const now=new Date();
+  const next=computeNext();
+  const banner=document.getElementById("nextBanner");
+  if(next){
+    banner.style.display="";
+    document.getElementById("nextEvent").textContent=`${next.time} — ${next.text}`;
+    document.getElementById("nextCountdownBig").textContent=bigCountdown(next.when-now);
+    document.getElementById("nextCountdown").textContent=next.day;
+  } else banner.style.display="none";
+  // flight countdowns (also tick live)
+  const fc=data.flights.map(f=>{ const ms=new Date(f.dateISO)-now; return ms>0?`${f.id}: departs in ${bigCountdown(ms)}`:`${f.id}: departed/complete`; }).join("   ·   ");
+  document.getElementById("flightCountdowns").textContent=fc;
+}
+function highlightNow(){
+  const now=new Date(); const next=computeNext();
+  document.querySelectorAll(".event-row").forEach(r=>r.classList.remove("now"));
+  let current=null; document.querySelectorAll(".event-row").forEach(r=>{ const w=r.getAttribute("data-when"); if(w&&new Date(w)<=now) current=r; });
+  if(current&&next&&(next.when-now)<1000*60*60*6) current.classList.add("now");
+  tickCountdown();
+}
+
+/* ------------------------- boot ------------------------- */
+tickClocks(); setInterval(tickClocks,1000);
+setInterval(tickCountdown,1000);      // live ticking countdown to next event + flights
+setInterval(highlightNow,30000);      // row highlight refresh
+renderAll();
+if (window.L) initMap();
+else { const wait=setInterval(()=>{ if(window.L){ clearInterval(wait); initMap(); } }, 200); }
+</script>
+</body>
+</html>
